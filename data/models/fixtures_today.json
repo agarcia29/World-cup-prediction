@@ -1,0 +1,29 @@
+{
+  "generated_note": "Edita este archivo para cargar los partidos que quieras mostrar en la pantalla principal.",
+  "fixtures": [
+    {
+      "home_team": "Brazil",
+      "away_team": "France",
+      "tournament": "FIFA World Cup",
+      "neutral": true,
+      "month": 6,
+      "label": "Demo 1"
+    },
+    {
+      "home_team": "Argentina",
+      "away_team": "Germany",
+      "tournament": "FIFA World Cup",
+      "neutral": true,
+      "month": 6,
+      "label": "Demo 2"
+    },
+    {
+      "home_team": "Spain",
+      "away_team": "England",
+      "tournament": "FIFA World Cup",
+      "neutral": true,
+      "month": 6,
+      "label": "Demo 3"
+    }
+  ]
+}
