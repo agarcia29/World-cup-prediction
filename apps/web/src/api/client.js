@@ -12,45 +12,23 @@ async function handle(res, message) {
   return res.json()
 }
 
-export async function fetchTeams() {
-  const res = await fetch(`${API_URL}/teams`)
-  const data = await handle(res, 'No se pudieron cargar los equipos')
-  return data.teams || []
-}
-export async function fetchFixtures() {
-  const res = await fetch(`${API_URL}/fixtures/today`)
-  const data = await handle(res, 'No se pudieron cargar los partidos sugeridos')
-  return data.fixtures || []
-}
-export async function fetchModelInfo() {
-  const res = await fetch(`${API_URL}/model-info`)
-  return handle(res, 'No se pudo cargar la información del modelo')
-}
-export async function predictMatch(payload) {
-  const res = await fetch(`${API_URL}/predict`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
-  return handle(res, 'No se pudo generar la predicción')
-}
-export async function compareMatches(matches) {
-  const res = await fetch(`${API_URL}/compare`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({matches}) })
-  return handle(res, 'No se pudieron comparar los partidos')
-}
-export async function fetchDatasetSummary() {
-  const res = await fetch(`${API_URL}/admin/dataset-summary`)
-  return handle(res, 'No se pudo cargar el resumen del dataset')
-}
-export async function fetchJobs() {
-  const res = await fetch(`${API_URL}/admin/jobs`)
-  return handle(res, 'No se pudieron cargar los jobs')
-}
-export async function uploadDatasets(formData) {
-  const res = await fetch(`${API_URL}/admin/upload-results`, { method:'POST', body: formData })
-  return handle(res, 'No se pudieron subir los archivos')
-}
-export async function addMatch(payload) {
-  const res = await fetch(`${API_URL}/admin/add-match`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
-  return handle(res, 'No se pudo guardar el partido')
-}
-export async function runAdminAction(action) {
-  const res = await fetch(`${API_URL}/admin/${action}`, { method:'POST' })
-  return handle(res, `No se pudo ejecutar ${action}`)
-}
+const get = (path, msg) => fetch(`${API_URL}${path}`).then(res => handle(res, msg))
+const post = (path, body, msg, isForm=false) => fetch(`${API_URL}${path}`, {
+  method:'POST',
+  headers: isForm ? undefined : {'Content-Type':'application/json'},
+  body: isForm ? body : (body ? JSON.stringify(body) : undefined)
+}).then(res => handle(res, msg))
+
+export const fetchTeams = () => get('/teams', 'No se pudieron cargar los equipos').then(d => d.teams || [])
+export const fetchFixtures = () => get('/fixtures/today', 'No se pudieron cargar los partidos sugeridos').then(d => d.fixtures || [])
+export const fetchModelInfo = () => get('/model-info', 'No se pudo cargar la información del modelo')
+export const predictMatch = (payload) => post('/predict', payload, 'No se pudo generar la predicción')
+export const compareMatches = (matches) => post('/compare', {matches}, 'No se pudieron comparar los partidos')
+export const fetchDatasetSummary = () => get('/admin/dataset-summary', 'No se pudo cargar el resumen del dataset')
+export const fetchJobs = () => get('/admin/jobs', 'No se pudieron cargar los jobs')
+export const fetchJob = (jobId) => get(`/admin/jobs/${jobId}`, 'No se pudo cargar el job')
+export const fetchModelsSummary = () => get('/admin/models-summary', 'No se pudo cargar el resumen de modelos')
+export const uploadDatasets = (formData) => post('/admin/upload-results', formData, 'No se pudieron subir los archivos', true)
+export const uploadModelArtifact = (formData) => post('/admin/upload-model', formData, 'No se pudo subir el modelo', true)
+export const addMatch = (payload) => post('/admin/add-match', payload, 'No se pudo guardar el partido')
+export const runAdminAction = (action) => post(`/admin/${action}`, null, `No se pudo ejecutar ${action}`)

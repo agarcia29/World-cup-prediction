@@ -1,6 +1,8 @@
 from __future__ import annotations
 from pathlib import Path
 from io import StringIO
+from datetime import datetime
+import shutil
 import pandas as pd
 from fastapi import UploadFile
 from src.utils.constants import RAW_DIR, INTERIM_DIR, PROCESSED_DIR, MODELS_DIR
@@ -12,6 +14,14 @@ from src.modeling.train_xgb import train_xgb_models, persist_artifacts
 from src.modeling.train_bayes import fit_poisson_baseline
 
 REQUIRED_RESULTS_COLS = ['date','home_team','away_team','home_score','away_score','tournament','city','country','neutral']
+MODEL_SLOTS = {
+    'xgb_home': {'filename': 'xgb_home.pkl', 'extensions': ['.pkl']},
+    'xgb_away': {'filename': 'xgb_away.pkl', 'extensions': ['.pkl']},
+    'feature_columns': {'filename': 'feature_columns.json', 'extensions': ['.json']},
+    'bayes_baseline': {'filename': 'bayes_baseline.json', 'extensions': ['.json']},
+    'bayes_pymc': {'filename': 'bayes_pymc.nc', 'extensions': ['.nc']},
+    'team_index': {'filename': 'team_index.json', 'extensions': ['.json']},
+}
 
 class AdminService:
     def dataset_summary(self):
@@ -39,6 +49,18 @@ class AdminService:
                 summary[name] = {'exists': False}
         return summary
 
+    def models_summary(self):
+        out = {}
+        for slot, cfg in MODEL_SLOTS.items():
+            path = MODELS_DIR / cfg['filename']
+            out[slot] = {
+                'exists': path.exists(),
+                'filename': cfg['filename'],
+                'updated_at': datetime.utcfromtimestamp(path.stat().st_mtime).isoformat() if path.exists() else None,
+                'size_kb': round(path.stat().st_size / 1024, 2) if path.exists() else None,
+            }
+        return out
+
     async def upload_csv(self, file: UploadFile, target_name: str):
         raw = await file.read()
         text = raw.decode('utf-8-sig')
@@ -50,6 +72,24 @@ class AdminService:
         RAW_DIR.mkdir(parents=True, exist_ok=True)
         df.to_csv(RAW_DIR / target_name, index=False)
         return {'filename': target_name, 'rows': int(len(df))}
+
+    async def upload_model(self, slot: str, file: UploadFile):
+        if slot not in MODEL_SLOTS:
+            raise ValueError(f'Slot de modelo inválido: {slot}')
+        cfg = MODEL_SLOTS[slot]
+        suffix = Path(file.filename or '').suffix.lower()
+        if suffix not in cfg['extensions']:
+            raise ValueError(f'Extensión inválida para {slot}. Esperadas: {cfg["extensions"]}')
+        MODELS_DIR.mkdir(parents=True, exist_ok=True)
+        target = MODELS_DIR / cfg['filename']
+        backup_dir = MODELS_DIR / 'backups'
+        backup_dir.mkdir(parents=True, exist_ok=True)
+        if target.exists():
+            stamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+            shutil.copy2(target, backup_dir / f'{target.stem}_{stamp}{target.suffix}')
+        raw = await file.read()
+        target.write_bytes(raw)
+        return {'slot': slot, 'filename': target.name, 'size_bytes': len(raw)}
 
     def add_match(self, payload: dict):
         path = RAW_DIR / 'results.csv'
