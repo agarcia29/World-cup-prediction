@@ -137,3 +137,16 @@ cd apps/web
 npm install
 npm run dev
 ```
+
+
+## Entrega 7
+
+### Variables de entorno nuevas
+- `APP_ENV=production`
+- `DISABLE_HEAVY_BAYES=true`
+- `ENABLE_ASYNC_JOBS=true`
+
+### Novedades
+- Admin > Model Upload para subir artefactos (`xgb_home.pkl`, `xgb_away.pkl`, `feature_columns.json`, `bayes_baseline.json`, `bayes_pymc.nc`, `team_index.json`).
+- Jobs asíncronos para `rebuild-features`, `retrain-xgb` y `refresh-teams` con estado persistido en `data/jobs/jobs.json`.
+- Endpoint pesado de Bayes bloqueado en producción; la estrategia recomendada es entrenar localmente y subir el artefacto desde la web.

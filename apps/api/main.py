@@ -10,7 +10,7 @@ from apps.api.routers.model_info import router as model_info_router
 from apps.api.routers.fixtures import router as fixtures_router
 from apps.api.routers.admin import router as admin_router
 
-app = FastAPI(title='World Cup Predictor API', version='0.6.0')
+app = FastAPI(title='World Cup Predictor API', version='0.7.0')
 app.add_middleware(
     CORSMiddleware,
     allow_origins=['*'],
